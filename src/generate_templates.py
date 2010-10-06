@@ -104,15 +104,17 @@ def get_js_templates(templates_dir, lang):
   return res
 
 
-def gen_template_file(templates_dir, lang):
-  """Generate a templates files for a given language.
+def gen_template_file(templates_dir, lang, output_dir):
+  """Generate a templates file for a given language.
 
   Arguments:
     - templates_dir: path where are located all the templating files.
     - lang: string, "fr", "en"...
+    - output_dir: path of the dir where should be put the generated file.
+
   """
   json_templates = get_js_templates(templates_dir, lang)
-  fpath = '%s/build/%s' % (templates_dir, TEMPLATES_FILE % lang)
+  fpath = '%s/%s' % (output_dir, TEMPLATES_FILE % lang)
   with open(fpath, 'w') as tf:
     tf.write('''
 ;(function($) {
@@ -127,7 +129,7 @@ def gen_template_file(templates_dir, lang):
   print "Generate template file %s." % fpath
 
 
-def main(languages, ms_dir=None, i18n_extraction=True):
+def main(languages, ms_dir=None, i18n_extraction=True, output_dir=None):
   """Extract i18n string + generate templates files.
 
   Arguments:
@@ -136,10 +138,14 @@ def main(languages, ms_dir=None, i18n_extraction=True):
     - languages: list of strings, languages to generate templates in.
       Example: ['en', 'fr', 'es']
     - i18n_extraction: bool, if false don't create/update po/mo files.
+    - output_dir: path of the dir where should be put the generated file.
+      If None, will be in 'build' directory, within templates dir.
+
 
   """
   ms_dir = ms_dir or abspath(sep.join(__file__.split(sep)[:-1]))
   if ms_dir.endswith('/'): ms_dir = ms_dir[:-1]
+  if output_dir is None: output_dir = '%s/build' % ms_dir
   
   i18n = os.path.join(ms_dir, 'i18n')
   if not os.path.exists(i18n): os.makedirs(i18n)
@@ -147,7 +153,7 @@ def main(languages, ms_dir=None, i18n_extraction=True):
   if i18n_extraction:
     extract_strings(ms_dir, languages)
   for lang in languages:
-    gen_template_file(ms_dir, lang)
+    gen_template_file(ms_dir, lang, output_dir)
   print "Done."
 
 
@@ -164,7 +170,10 @@ if __name__ == "__main__":
                           "For this to work, you need to have the po files "
                           "of the requested languages (even if empty)")
                     )
+  parser.add_option("-o", "--output", dest="out_dir", default=None,
+                    metavar="DIR",
+                    help="Path to the directory where to put generated files.")
   options, args = parser.parse_args()
   languages = options.languages.split(',')
-  main(languages, options.msdir, options.i18n_extraction)
+  main(languages, options.msdir, options.i18n_extraction, options.out_dir)
 

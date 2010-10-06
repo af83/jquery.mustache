@@ -73,6 +73,7 @@ accepts several arguments, which let you specify:
   - for which languages you want to generate the templates (i18n);
   - if you want to skip the creation/update of po and mo files (the po files
     need to exist for the templates files to be created).
+  - where to put the generated files.
 
 The help:
 
@@ -87,6 +88,8 @@ The help:
       -s, --skipi18n        Skip po/mo files update/creation process. For this to
                             work, you need to have the po files of the requested
                             languages (even if empty)
+      -o DIR, --output=DIR  Path to the directory where to put generated files.
+
     
 ## License
 
