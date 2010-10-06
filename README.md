@@ -64,6 +64,30 @@ The generated file looks like:
 
 You can see a working example in the example directory.
 
+
+## Usage
+The python script generating the templates files (one file for each language) 
+accepts several arguments, which let you specify:
+
+  - where are your template files located;
+  - for which languages you want to generate the templates (i18n);
+  - if you want to skip the creation/update of po and mo files (the po files
+    need to exist for the templates files to be created).
+
+The help:
+
+    $ python ../src/generate_templates.py -h
+    Usage: generate_templates.py [options]
+    
+    Options:
+      -h, --help            show this help message and exit
+      -d DIR, --msdir=DIR   Generate templates files from templates in given DIR
+      -l LANGUAGES, --languages=LANGUAGES
+                            Specify the languages you want. Ex: en,fr,de
+      -s, --skipi18n        Skip po/mo files update/creation process. For this to
+                            work, you need to have the po files of the requested
+                            languages (even if empty)
+    
 ## License
 
 This program is free software: you can redistribute it and/or modify

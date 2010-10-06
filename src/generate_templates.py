@@ -19,7 +19,6 @@ except ImportError:
 
 TEMPLATES_FILE = 'templates_%s.js'
 
-LANGUAGES = ['fr', 'en', 'es']
 
 # This is the base file used as PO file when none exist
 # There is no creation/modification time on purpose
@@ -35,10 +34,15 @@ msgstr ""
 """
 
 
-def extract_strings(templates_dir):
+def extract_strings(templates_dir, languages):
   """Run commands to extract wordings (generate/update po/mo files in i18n).
+
+  Arguments:
+    - templates_dir: where are located the templates files.
+    - languages: list of strings, languages to generate templates in.
+      Example: ['en', 'fr', 'es']
   """
-  for lang in LANGUAGES:
+  for lang in languages:
     data = dict(lang=lang, base_dir = templates_dir)
 
     data['po_file'] = po_file = "%(base_dir)s/i18n/templates_%(lang)s.po" % data
@@ -123,12 +127,16 @@ def gen_template_file(templates_dir, lang):
   print "Generate template file %s." % fpath
 
 
-def main(ms_dir=None):
+def main(languages, ms_dir=None, i18n_extraction=True):
   """Extract i18n string + generate templates files.
 
   Arguments:
     - ms_dir: the directory path where are the templates located. If none given
       will be the directory where the script is located.
+    - languages: list of strings, languages to generate templates in.
+      Example: ['en', 'fr', 'es']
+    - i18n_extraction: bool, if false don't create/update po/mo files.
+
   """
   ms_dir = ms_dir or abspath(sep.join(__file__.split(sep)[:-1]))
   if ms_dir.endswith('/'): ms_dir = ms_dir[:-1]
@@ -136,8 +144,9 @@ def main(ms_dir=None):
   i18n = os.path.join(ms_dir, 'i18n')
   if not os.path.exists(i18n): os.makedirs(i18n)
 
-  extract_strings(ms_dir)
-  for lang in ['en', 'fr', 'es']:
+  if i18n_extraction:
+    extract_strings(ms_dir, languages)
+  for lang in languages:
     gen_template_file(ms_dir, lang)
   print "Done."
 
@@ -147,6 +156,15 @@ if __name__ == "__main__":
   parser.add_option("-d", "--msdir", dest="msdir",
                     help="Generate templates files from templates in given DIR",
                     metavar="DIR")
+  parser.add_option("-l", "--languages", dest="languages", default="en,fr,es",
+                    help="Specify the languages you want. Ex: en,fr,de")
+  parser.add_option("-s", "--skipi18n", dest="i18n_extraction", default=True,
+                    action="store_false",
+                    help=("Skip po/mo files update/creation process. "
+                          "For this to work, you need to have the po files "
+                          "of the requested languages (even if empty)")
+                    )
   options, args = parser.parse_args()
-  main(options.msdir)
+  languages = options.languages.split(',')
+  main(languages, options.msdir, options.i18n_extraction)
 
