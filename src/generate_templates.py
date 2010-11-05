@@ -29,7 +29,7 @@ msgstr ""
 "Project-Id-Version: templates\\n"
 "Report-Msgid-Bugs-To: \\n"
 "MIME-Version: 1.0\\n"
-"Content-Type: text/plain; charset=utf8\\n"
+"Content-Type: text/plain; charset=utf-8\\n"
 "Content-Transfer-Encoding: 8bit\\n"
 """
 
