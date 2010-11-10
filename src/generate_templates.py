@@ -10,6 +10,7 @@ from optparse import OptionParser
 import os
 from os.path import sep, abspath
 import re
+import sys
 
 try:
   import json
@@ -34,13 +35,15 @@ msgstr ""
 """
 
 
-def extract_strings(templates_dir, languages):
+def extract_strings(templates_dir, languages, update_mo=True):
   """Run commands to extract wordings (generate/update po/mo files in i18n).
 
   Arguments:
     - templates_dir: where are located the templates files.
     - languages: list of strings, languages to generate templates in.
       Example: ['en', 'fr', 'es']
+    - update_mo, optional boolean, default to True, if False then don't 
+      (re)generate the mo files.
   """
   for lang in languages:
     data = dict(lang=lang, base_dir = templates_dir)
@@ -62,6 +65,7 @@ def extract_strings(templates_dir, languages):
     if status != 0:
       print output
       raise AssertionError("Bad returned value from: " + cmd)
+    if not update_mo: continue
     data['destination'] = '%(base_dir)s/i18n/build/%(lang)s/LC_MESSAGES' % data
     cmd2 = ('mkdir -p %(destination)s && '
             'msgfmt -o %(destination)s/templates.mo '
@@ -129,7 +133,8 @@ def gen_template_file(templates_dir, lang, output_dir):
   print "Generate template file %s." % fpath
 
 
-def main(languages, ms_dir=None, i18n_extraction=True, output_dir=None):
+def main(languages, ms_dir=None, i18n_extraction=True, output_dir=None, 
+         only_extract_str=False):
   """Extract i18n string + generate templates files.
 
   Arguments:
@@ -138,11 +143,19 @@ def main(languages, ms_dir=None, i18n_extraction=True, output_dir=None):
     - languages: list of strings, languages to generate templates in.
       Example: ['en', 'fr', 'es']
     - i18n_extraction: bool, if false don't create/update po/mo files.
+      This will have for effect only to update generated js templates files 
+      without touching at translations.
     - output_dir: path of the dir where should be put the generated file.
       If None, will be in 'build' directory, within templates dir.
-
+    - only_extract_str: boolean, default to False. If set to True, then
+      the strings are extracted for i18n (in po files), but nothing else is
+      done. This option cannot be True in the same time i18n_extraction is
+      set to false.
 
   """
+  if not i18n_extraction and only_extract_str:
+    raise AssertionError('You cannot have i18n_extraction==False and'
+                         'only_extract_str==True.')
   ms_dir = ms_dir or abspath(sep.join(__file__.split(sep)[:-1]))
   if ms_dir.endswith('/'): ms_dir = ms_dir[:-1]
   if output_dir is None: output_dir = '%s/build' % ms_dir
@@ -150,10 +163,13 @@ def main(languages, ms_dir=None, i18n_extraction=True, output_dir=None):
   i18n = os.path.join(ms_dir, 'i18n')
   if not os.path.exists(i18n): os.makedirs(i18n)
 
-  if i18n_extraction:
-    extract_strings(ms_dir, languages)
-  for lang in languages:
-    gen_template_file(ms_dir, lang, output_dir)
+  if only_extract_str:
+    extract_strings(ms_dir, languages, update_mo=False)
+  else:
+    if i18n_extraction:
+      extract_strings(ms_dir, languages)
+    for lang in languages:
+      gen_template_file(ms_dir, lang, output_dir)
   print "Done."
 
 
@@ -168,12 +184,28 @@ if __name__ == "__main__":
                     action="store_false",
                     help=("Skip po/mo files update/creation process. "
                           "For this to work, you need to have the po files "
-                          "of the requested languages (even if empty)")
+                          "of the requested languages (even if empty). "
+                          "Cannot be ran with -X option.")
+                    )
+  parser.add_option('-X', '--onlyXtractStrings', dest='onlyXtractStrs', 
+                    default=False, action="store_true",
+                    help=("Only extract templates strings for i18n. "
+                          "No template is (re)generated, no MO file "
+                          "is produced (only po files). "
+                          "Cannot be ran with -S option.")
                     )
   parser.add_option("-o", "--output", dest="out_dir", default=None,
                     metavar="DIR",
                     help="Path to the directory where to put generated files.")
   options, args = parser.parse_args()
+  if not options.msdir or not options.out_dir:
+    print ('The options -o and -d are not optional (even if called options!).')
+    sys.exit(1)
+  if not options.i18n_extraction and options.onlyXtractStrs:
+    print ('--skipi18n (-s) and --onlyXtractStrings (-X) are mutually exclusive'
+           ' and cannot be used silmutaneously.')
+    sys.exit(1)
   languages = options.languages.split(',')
-  main(languages, options.msdir, options.i18n_extraction, options.out_dir)
+  main(languages, options.msdir, options.i18n_extraction, options.out_dir,
+       options.onlyXtractStrs)
 
