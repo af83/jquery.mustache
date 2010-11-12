@@ -85,7 +85,11 @@ def transform_line(line, t):
    line = line.strip()
    if line.startswith('##'): return ''
    for group in trans_re.findall(line):
-     line = line.replace('_("%s")' % group, t.gettext(group))
+     group_utf8 = group.encode('utf-8')
+     replacement = t.gettext(group_utf8)
+     if replacement == group_utf8: replacement = group
+     else: replacement = replacement.decode('utf-8')
+     line = line.replace('_("%s")' % group, replacement)
    return line
 
 
